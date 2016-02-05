@@ -45,33 +45,26 @@ class choreo_poses():
         if (self.pose_name == 'c'):
             return
 
-        print "Saving pose..."
-        if(not os.path.isfile('document.yaml')):
-            print "No yaml-file available"
-            #head_entry = {'head':[{'position':[self.head_joint_pos[0], self.head_joint_pos[0]], "name":"name"}]}
-            torso_entry = {'torso':[{'position':{torso_2_joint:0.0, torso_3_joint:0.0}, "name":"default"}]}
-            #base_entry = {'base':[{'position':[self.torso_joint_pos[0], self.torso_joint_pos[0]], "name":"name"}]}
-            with open(file_path, 'w') as yaml_data:
-                yaml_data.write(yaml.dump(torso_entry, default_flow_style=False))
-        else:
+        torso_positions= []
+        # read from file, if old file exists
+        if(os.path.isfile('document.yaml')):
             with open(file_path, 'r') as stream:
                 yaml_data = yaml.load(stream)
-
-            torso_positions= []
-            # read from file
             for it in yaml_data["torso"]:
                 name = it["name"]
                 x = it["position"][torso_2_joint]
                 y = it["position"][torso_3_joint]
-                print "name: "+str(name)+", "+torso_2_joint+": "+str(x)+", "+torso_3_joint+": "+str(y)
                 torso_position={'position':{torso_2_joint:x, torso_3_joint:y}, 'name':name}
                 torso_positions.append(torso_position)
-            # read new position
-            torso_position={'position':{torso_2_joint:self.torso_joint_pos[0], torso_3_joint:self.torso_joint_pos[1]}, 'name':self.pose_name}
-            torso_positions.append(torso_position)
-            # save everything in the file
-            with open(file_path, 'w') as stream:
-                stream.write(yaml.dump({'torso':torso_positions}, default_flow_style=False))
+
+        # read new position from topic
+        torso_position={'position':{torso_2_joint:self.torso_joint_pos[0], torso_3_joint:self.torso_joint_pos[1]}, 'name':self.pose_name}
+        torso_positions.append(torso_position)
+        print "name: "+str(self.pose_name)+", "+torso_2_joint+": "+str(self.torso_joint_pos[0])+", "+torso_3_joint+": "+str(self.torso_joint_pos[1])
+
+        # save everything in the file
+        with open(file_path, 'w') as stream:
+            stream.write(yaml.dump({'torso':torso_positions}, default_flow_style=False))
 
 
     def execute(self):

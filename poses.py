@@ -45,9 +45,10 @@ class choreo_poses():
         if (self.pose_name == 'c'):
             return
 
-        torso_positions= []
+        torso_positions = []
+        base_poses = []
         # read from file, if old file exists
-        if(os.path.isfile('document.yaml')):
+        if(os.path.isfile(file_path)):
             with open(file_path, 'r') as stream:
                 yaml_data = yaml.load(stream)
             for it in yaml_data["torso"]:
@@ -57,14 +58,32 @@ class choreo_poses():
                 torso_position={'position':{torso_2_joint:x, torso_3_joint:y}, 'name':name}
                 torso_positions.append(torso_position)
 
-        # read new position from topic
+            for it in yaml_data["base"]:
+                name = it["name"]
+                x = it["position"]["x"]
+                y = it["position"]["y"]
+                w = it["position"]["yaw"]
+                base_pose={'position':{"x":x, "y":y, "yaw":w}, 'name':name}
+                base_poses.append(base_pose)
+
+        # read new positions from topic
         torso_position={'position':{torso_2_joint:self.torso_joint_pos[0], torso_3_joint:self.torso_joint_pos[1]}, 'name':self.pose_name}
         torso_positions.append(torso_position)
+        quaternion = (
+            self.base_odometry.pose.pose.orientation.x,
+            self.base_odometry.pose.pose.orientation.y,
+            self.base_odometry.pose.pose.orientation.z,
+            self.base_odometry.pose.pose.orientation.w)
+        euler = tf.transformations.euler_from_quaternion(quaternion)
+        base_pose={'position':{"x":self.base_odometry.pose.pose.position.x, "y":self.base_odometry.pose.pose.position.y, "yaw":euler[2]}, 'name':self.pose_name}
+        base_poses.append(base_pose)
         print "name: "+str(self.pose_name)+", "+torso_2_joint+": "+str(self.torso_joint_pos[0])+", "+torso_3_joint+": "+str(self.torso_joint_pos[1])
+
+
 
         # save everything in the file
         with open(file_path, 'w') as stream:
-            stream.write(yaml.dump({'torso':torso_positions}, default_flow_style=False))
+            stream.write(yaml.dump({'torso':torso_positions, 'base':base_poses}, default_flow_style=False))
 
 
     def execute(self):
